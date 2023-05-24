@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- After -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='static/styles.css') }}"
+    />
+    <script src="{{ url_for('static', filename='static/script.js') }}"></script>
+    <title>Document</title>
+  </head>
+  <style>
+    /* styles.css */
+    .warning {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: yellow;
+      color: red;
+      padding: 10px;
+      font-weight: bold;
+      border-radius: 10px;
+    }
+    .exclamation {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background-color: red;
+      color: white;
+      font-size: 16px;
+      text-align: center;
+      margin-right: 5px;
+      border-radius: 50%;
+    }
+  </style>
+  <body>
+    <div id="wheel" class="loader"></div>
+    <div id="box">
+      <img id="image/" src="" alt="" />
+      <video id="video" width="400" height="400" autoplay></video>
+      <button id="snap">Capture</button>
+      <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+    <button onclick="showResult()">Show Result</button>
+    <div id="result" style="display: none"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/7.14.1-0/firebase.js"></script>
+
+    <script>
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBiwTqcuj7HOLQ1wLhOlPddCeD2dpSxFGo",
+        authDomain: "imagelast-81016.firebaseapp.com",
+        databaseURL: "https://imagelast-81016-default-rtdb.firebaseio.com",
+        projectId: "imagelast-81016",
+        storageBucket: "imagelast-81016.appspot.com",
+        messagingSenderId: "568790016590",
+        appId: "1:568790016590:web:8f2683e509d2e49406191f",
+        measurementId: "G-FECBZQBGGK",
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      localStorage.clear();
+
+      var ImgUrl
+
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const snap = document.getElementById("snap");
+      const constraints = {
+        audio: false,
+        video: {
+          width: 400,
+          height: 400,
+        },
+      };
+       async function init() {
+        try{
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          handlestream(stream);
+        }
+        catch (error){
+          console.log(error);
+        }
+      }
+      function handlestream(stream) {
+        window.stream = stream;
+        video.srcObject = stream;
+      }
+      init();
+      var context = canvas.getContext("2d");
+      snap.addEventListener("click", function () {
+        context.drawImage(video, 0, 0, 640, 480);
+        var image = new Image();
+        image.id = "pic";
+        image.src = canvas.toDataURL("image.png");
+        console.log(image.src);
+        var button = document.createElement("button");
+        button.id = "btn";
+        button.textContent = "Upload Image";
+        document.body.appendChild(button);
+        button.onclick = function () {
+          const ref = firebase.storage().ref();
+          ref
+          .child(new Date() + "-" + "base64")
+          .putString(image.src, "data_url")
+          .then(function (snapshot) {
+            console.log("Image Uploaded");
+            alert("Image Uploaded");
+            snapshot.ref.getDownloadURL().then(function (url) {
+              ImgUrl = url;
+              console.log(url);
+              ImageLink = url;
+              localStorage.setItem("URL", url);
+              document.getElementById("wheel").style.display = "block";
+              document.getElementById("box").style.display = "none";
+              document.getElementById("btn").style.display = "none";
+            });
+            firebase.database().ref("New Pictures/").set({
+              Link: ImgUrl,
+            });
+          });
+        };
+      });
+
+       //---------------------------Python result SENDER---------------------------
+
+       setTimeout(function() {
+        var resultDialogue = document.getElementById('resultDialogue');
+        resultDialogue.textContent = 'The result is: ' + result;
+        resultDialogue.style.display = 'block';
+      }, 8000); // Delay in milliseconds (e.g., 2000 for 2 seconds)
+
+      var myVariable = "https://i.postimg.cc/HLrk9ZND/Photo-on-09-05-23-at-19-51.jpg";
+
+      // Make an HTTP request to the Flask server
+      fetch('/my-endpoint', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ variable: myVariable
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data === 1) {
+          // Redirect to a new page
+          window.location.href = 'www.google.com';
+        }
+        else {
+          // Generate a warning div
+          var warningDiv = document.createElement('div');
+          warningDiv.classList.add('warning');
+          var alertHeading = document.createElement('h2');
+          alertHeading.innerHTML = '<span class="exclamation">!</span> Alert';
+          var warningText = document.createElement('p');
+          warningText.textContent = 'Face not matched';
+          warningDiv.appendChild(alertHeading);
+          warningDiv.appendChild(warningText);
+          document.body.appendChild(warningDiv);
+          // Vibrate the device
+          vibrateDevice();
+          // Remove the warning div after 3 seconds
+          setTimeout(function() {
+            warningDiv.remove();
+          }, 3000);
+        }
+      });
+
+      function vibrateDevice() {
+        if (navigator.vibrate) {
+          // Vibrate for 200ms
+          navigator.vibrate(200);
+        }
+      }
+
+      function showResult() {
+        var result = {{ result }};
+        if (result === 1) {
+          // Redirect to a new page
+          window.location.href = 'www.google.com';
+        }
+        else {
+          // Generate a warning div
+          var warningDiv = document.createElement('div');
+          warningDiv.classList.add('warning');
+          var alertHeading = document.createElement('h2');
+          alertHeading.innerHTML = '<span class="exclamation">!</span> Alert';
+          var warningText = document.createElement('p');
+          warningText.textContent = 'Face not matched';
+          warningDiv.appendChild(alertHeading);
+          warningDiv.appendChild(warningText);
+          document.body.appendChild(warningDiv);
+          // Vibrate the device
+          vibrateDevice();
+          // Remove the warning div after 3 seconds
+          setTimeout(function() {
+            warningDiv.remove();
+          }, 3000);
+        }
+    </script>
+  </body>
+</html>
